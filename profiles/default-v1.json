@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "default-v1",
+  "name": "默认插件评测",
+  "version": "1.0.0",
+  "description": "适用于当前 DSH 插件隔离评测闭环的基础方案。",
+  "metrics": [
+    "answer-matches-expected",
+    "duration"
+  ],
+  "casesPath": "cases/default-v1.json"
+}

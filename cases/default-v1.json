@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "profileId": "default-v1",
+  "version": "1.0.0",
+  "pluginTypes": ["knowledge-query"],
+  "cases": [
+    {
+      "id": "knowledge-refund-window",
+      "title": "查询退款申请时限",
+      "prompt": "请使用已安装插件查询退款时限，并只回答查询到的退款申请默认时限。",
+      "expected": "30 天"
+    },
+    {
+      "id": "knowledge-shipping-sla",
+      "title": "查询标准配送时效",
+      "prompt": "请使用已安装插件查询标准配送，并只回答查询到的标准配送承诺时效。",
+      "expected": "3 个工作日"
+    },
+    {
+      "id": "knowledge-invoice-channel",
+      "title": "查询电子发票发送渠道",
+      "prompt": "请使用已安装插件查询电子发票，并只回答查询到的电子发票发送渠道。",
+      "expected": "订单绑定邮箱"
+    }
+  ]
+}

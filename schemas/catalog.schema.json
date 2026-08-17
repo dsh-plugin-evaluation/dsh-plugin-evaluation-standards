@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DSH Plugin Evaluation Dataset Store Catalog",
+  "type": "object",
+  "required": ["schemaVersion", "repository", "defaultProfileId", "runnerCapability", "profiles"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "repository": { "type": "string", "minLength": 1 },
+    "defaultProfileId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "runnerCapability": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/dataset" },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "dataset": {
+      "type": "object",
+      "required": ["id", "name", "description", "version", "pluginTypes", "scenarios", "caseCount", "metrics", "source"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "pluginTypes": { "$ref": "#/$defs/strings" },
+        "scenarios": { "$ref": "#/$defs/strings" },
+        "caseCount": { "type": "integer", "minimum": 1 },
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "uniqueItems": true
+        },
+        "source": { "$ref": "#/$defs/source" }
+      },
+      "additionalProperties": false
+    },
+    "strings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "profilePath"],
+          "properties": {
+            "type": { "const": "bundled" },
+            "profilePath": { "type": "string", "pattern": "^profiles/.+\\.json$" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "repository", "ref", "profilePath"],
+          "properties": {
+            "type": { "const": "external" },
+            "repository": { "type": "string", "pattern": "^https://github\\.com/[^/]+/[^/]+/?$" },
+            "ref": { "type": "string", "minLength": 1 },
+            "profilePath": { "type": "string", "pattern": "^[^/].*\\.json$" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

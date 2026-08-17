@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DSH Plugin Evaluation Metric",
+  "type": "object",
+  "required": ["schemaVersion", "id", "name", "version", "type", "required", "supportedBy", "runnerSupport", "description", "result"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "type": { "enum": ["llm_judge", "observation", "tool_trace", "threshold"] },
+    "required": { "type": "boolean" },
+    "supportedBy": { "type": "string", "minLength": 1 },
+    "runnerSupport": { "enum": ["supported", "unsupported"] },
+    "description": { "type": "string", "minLength": 1 },
+    "result": {
+      "type": "object",
+      "required": ["affectsPass"],
+      "properties": {
+        "affectsPass": { "type": "boolean" },
+        "passValue": { "type": "string" },
+        "failValue": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

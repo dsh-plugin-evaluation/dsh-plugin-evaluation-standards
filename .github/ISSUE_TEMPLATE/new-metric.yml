@@ -1,0 +1,48 @@
+name: 新增评测指标
+about: 提议收录新的 DSH 插件评测指标
+title: "[Metric]: "
+labels:
+  - proposal
+body:
+  - type: markdown
+    attributes:
+      value: |
+        此仓库由社区维护，不代表 DeepSeek 或 DSH 官方。请勿提交密钥、Token、密码或私有插件内容。
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 指标目的
+      description: 该指标要衡量什么，解决什么评测问题？
+    validations:
+      required: true
+  - type: input
+    id: plugin-types
+    attributes:
+      label: 适用插件类型
+      description: 例如：检索、数据处理、工作流插件。
+    validations:
+      required: true
+  - type: textarea
+    id: evaluation
+    attributes:
+      label: 判定方式
+      description: 请提供可执行的判定规则，或明确说明当前尚未被 DSH runner 支持。
+    validations:
+      required: true
+  - type: dropdown
+    id: affects-pass
+    attributes:
+      label: 是否影响通过
+      options:
+        - 是
+        - 否
+        - 尚待 DSH runner 支持后确定
+    validations:
+      required: true
+  - type: textarea
+    id: runner-capability
+    attributes:
+      label: 所需 DSH runner 能力
+      description: 说明依赖的 runner 输入、观测或执行能力，以及目前是否已支持。
+    validations:
+      required: true

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "duration",
+  "name": "执行耗时",
+  "version": "1.0.0",
+  "type": "observation",
+  "required": true,
+  "supportedBy": "duration",
+  "runnerSupport": "supported",
+  "description": "自动记录每条用例和整次实验的真实执行耗时。",
+  "result": {
+    "affectsPass": false
+  }
+}

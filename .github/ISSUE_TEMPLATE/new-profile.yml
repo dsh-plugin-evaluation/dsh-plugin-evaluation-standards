@@ -1,0 +1,38 @@
+name: 新增评测方案
+about: 提议收录新的 DSH 插件评测方案
+title: "[Profile]: "
+labels:
+  - proposal
+body:
+  - type: markdown
+    attributes:
+      value: |
+        此仓库由社区维护，不代表 DeepSeek 或 DSH 官方。请勿提交密钥、Token、密码或私有插件内容。
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 方案目的
+      description: 该方案解决的评测场景与目标是什么？
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: 引用指标
+      description: 请列出要引用的 metric ID，并说明每个指标的作用。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 适用范围
+      description: 说明适用插件类型、任务类型或限制条件。
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 预期版本
+      description: 例如：1.0.0。
+    validations:
+      required: true

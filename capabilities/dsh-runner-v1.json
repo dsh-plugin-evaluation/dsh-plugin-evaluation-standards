@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "dsh-runner-v1",
+  "name": "DSH runner v1",
+  "metricTypes": {
+    "llm_judge": {
+      "supported": true,
+      "canAffectPass": true
+    },
+    "observation": {
+      "supported": true,
+      "canAffectPass": false
+    },
+    "tool_trace": {
+      "supported": false,
+      "canAffectPass": false
+    },
+    "threshold": {
+      "supported": false,
+      "canAffectPass": false
+    }
+  }
+}

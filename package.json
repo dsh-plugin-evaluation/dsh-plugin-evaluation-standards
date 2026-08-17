@@ -1,0 +1,10 @@
+{
+  "name": "dsh-plugin-evaluation-standards",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Versioned shared standards for DSH plugin evaluation",
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "test": "node --test"
+  }
+}

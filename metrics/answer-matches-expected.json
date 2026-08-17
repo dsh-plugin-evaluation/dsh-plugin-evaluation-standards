@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "answer-matches-expected",
+  "name": "结果符合预期",
+  "version": "1.0.0",
+  "type": "llm_judge",
+  "required": true,
+  "supportedBy": "final-output",
+  "runnerSupport": "supported",
+  "description": "使用选定模型判断插件最终输出是否满足测试用例的预期结果。",
+  "result": {
+    "affectsPass": true,
+    "passValue": "PASS",
+    "failValue": "FAIL"
+  }
+}
