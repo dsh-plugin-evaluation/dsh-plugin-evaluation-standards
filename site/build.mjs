@@ -133,7 +133,6 @@ const html = `<!doctype html>
       </section>
     </section>
   </main>
-  <footer><div class="content-width"><span>DSH Plugin Evaluation Datasets</span><span>社区维护的评测数据集合</span><a href="${repositoryUrl}">GitHub ↗</a></div></footer>
   <script>
     const active = { plugin: new Set(), scenario: new Set() }
     const checkboxes = document.querySelectorAll('.check-filter')
