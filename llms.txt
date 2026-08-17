@@ -1,0 +1,29 @@
+# DSH Plugin Evaluation Datasets
+
+Open, reusable evaluation datasets, test cases, and metrics for DeepSeek Harness (DSH) plugins.
+
+## What this repository provides
+
+- `catalog.json`: machine-readable dataset catalog; use it to discover datasets by plugin type and scenario.
+- `profiles/`: evaluation profiles that select metrics and point to case files.
+- `cases/`: reusable plugin test cases with prompts and expected answers.
+- `metrics/`: metric definitions that explain how results are evaluated.
+- `capabilities/`: current DSH runner support for metric types.
+
+## Current dataset
+
+- `default-v1`: a knowledge-query starter dataset covering refund windows, standard shipping time, and electronic invoice delivery.
+
+## Use this repository
+
+1. Read `README.md` for the human-friendly dataset overview.
+2. Read `catalog.json` to select a dataset.
+3. Read the selected profile and its referenced cases file.
+4. Run `npm run validate` and `npm test` after modifying repository content.
+
+## Important documents
+
+- `CONTRIBUTING.md`: contribution workflow.
+- `DATASET_LISTING.md`: external dataset listing requirements.
+- `AI_ASSISTED_AUTHORING.md`: rules for AI-assisted dataset drafting.
+- `LICENSE`: CC0-1.0 for repository content; external datasets may use their own licenses.
