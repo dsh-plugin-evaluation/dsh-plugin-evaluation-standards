@@ -4,7 +4,7 @@ English | [中文](README.zh.md) | [日本語](README.ja.md)
 
 > A growing collection of evaluation datasets for DSH plugins.
 
-Each dataset includes real prompts, expected answers, and the metrics used to check the result. Pick one that fits your plugin, run its cases, and use the results to understand how your plugin behaves.
+Each dataset is a profile (which metrics to use) and a cases file (test prompts and expected answers). Pick one that fits your plugin, run its cases, and use the results to understand how your plugin behaves.
 
 ## Start here
 

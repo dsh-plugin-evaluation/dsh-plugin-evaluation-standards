@@ -2,6 +2,21 @@
 
 通过 Fork + Pull Request 贡献评测指标、内置数据集或外部数据集目录条目。
 
+## 评测集数据格式
+
+一个评测集由以下部分组成：
+
+- **profile**（`profiles/<id>.json`）：用哪些指标来评测，以及测试用例文件在哪里；
+- **cases**（`cases/<id>.json`）：插件类型和具体测试用例；
+- **fixtures**（可选）：准备数据，帮助让预期答案可复现。
+
+每条测试用例包含：
+
+- `id`：kebab-case 唯一标识；
+- `title`：用例标题；
+- `prompt`：发给插件的输入；
+- `expected`：预期结果，最好能从准备数据或明确条件中推导出来。
+
 ## 提交新指标
 
 - 在 `metrics/` 新建 kebab-case 文件名的 JSON 文件。
