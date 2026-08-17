@@ -5,6 +5,7 @@ const root = resolve(import.meta.dirname, '..')
 const output = resolve(root, 'site', 'dist')
 const source = resolve(root, 'site', 'src')
 const repositoryUrl = 'https://github.com/dsh-plugin-evaluation/dsh-plugin-evaluation-standards'
+const siteUrl = 'https://dsh-plugin-evaluation.github.io/dsh-plugin-evaluation-standards/'
 
 const readJson = async path => JSON.parse(await readFile(path, 'utf8'))
 const escapeHtml = value => String(value)
@@ -171,5 +172,7 @@ const html = `<!doctype html>
 await rm(output, { recursive: true, force: true })
 await mkdir(output, { recursive: true })
 await writeFile(resolve(output, 'index.html'), html)
+await writeFile(resolve(output, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}sitemap.xml\n`)
+await writeFile(resolve(output, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>${siteUrl}</loc>\n  </url>\n</urlset>\n`)
 await writeFile(resolve(output, '.nojekyll'), '')
 console.log(`Built ${catalog.profiles.length} datasets into site/dist/index.html`)
