@@ -117,13 +117,6 @@ const html = `<!doctype html>
     </div>
   </header>
   <main id="top">
-    <section class="page-heading">
-      <div class="content-width">
-        <p class="breadcrumb">DSH / <strong>Datasets</strong></p>
-        <h1>Datasets <span>${catalog.profiles.length}</span></h1>
-        <p>为 DSH 插件准备的社区评测数据集。每套数据包含 profile（评测指标）和 cases（测试问题与预期答案）。</p>
-      </div>
-    </section>
     <section class="content-width catalog-layout" id="datasets">
       <aside class="sidebar">
         <div class="sidebar-title"><strong>筛选</strong><button id="clear-filters" type="button">清除</button></div>
