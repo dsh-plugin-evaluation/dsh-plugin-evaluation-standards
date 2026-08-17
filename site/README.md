@@ -1,38 +1,21 @@
-# 未来官网信息架构
+# 评测集目录网站
 
-本目录仅记录未来官网的最小内容模型；本次不实现 Web 应用，也不引入前端依赖。
+这是一个由仓库数据自动生成的静态目录网站，用来浏览 DSH 插件评测集。
 
-## 首页
+## 本地构建
 
-- 项目定位：社区维护、非 DeepSeek 或 DSH 官方。
-- 最新发布版本：当前推荐使用的 Git tag 与对应 commit SHA。
-- 方案数量：`catalog.json` 中公开方案的数量。
+```bash
+npm run build:site
+```
 
-## 方案目录
+生成结果写入 `site/dist/index.html`。页面会从 `catalog.json`、关联的 profile / cases 文件和 metrics 文件中读取内容；`site/dist/` 是构建产物，不提交到仓库。
 
-每个方案展示：
+## 发布
 
-- 方案名称；
-- 版本；
-- 适用范围；
-- 指标列表。
+`.github/workflows/pages.yml` 会在 `main` 更新后：
 
-## 方案详情
+1. 运行数据校验；
+2. 生成静态网站；
+3. 部署到 GitHub Pages。
 
-每项方案详情应展示：
-
-- 指标定义；
-- 指标是否影响通过；
-- DSH runner 支持状态；
-- 版本历史。
-
-页面应同时展示固定版本引用方式，避免引导生产评测跟随 `main`。
-
-## 贡献页面
-
-- Fork + Pull Request 流程；
-- 本地校验命令：`npm run validate`；
-- 指向贡献、治理、安全和发布规范；
-- 明确禁止提交 API Key、Token、密码和私有插件内容。
-
-官网内容必须延续仓库边界：收录或展示不构成质量、安全或官方认证。
+首次发布前，需要在仓库 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。

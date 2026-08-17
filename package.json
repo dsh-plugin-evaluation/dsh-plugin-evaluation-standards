@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Versioned shared standards for DSH plugin evaluation",
   "scripts": {
+    "build:site": "node site/build.mjs",
     "validate": "node scripts/validate.mjs",
     "test": "node --test"
   }
