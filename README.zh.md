@@ -1,120 +1,100 @@
-# DSH 插件评测数据集
+# DSH 插件评测集
 
 [English](README.md) | 中文 | [日本語](README.ja.md)
 
-> 一个由社区维护、面向 DSH 插件的版本化评测数据集目录。
+> 这里收集了一些可以直接拿来评测 DSH 插件的测试集。
 
-用户可以在这里找到适合自己插件的数据集，查看测试用例与评测指标，并让 DSH 插件评测中心装载固定版本。较大的社区数据集可以继续由作者在自己的 GitHub 仓库维护，本仓库只负责收录目录信息。
+每个评测集都包含测试问题、预期答案和评测指标。你可以先找一个和自己插件接近的评测集，跑一遍看看插件在不同场景下的表现。
 
-这不是 DeepSeek 或 DSH 官方项目。被收录不代表质量、安全或官方认证。
+## 从这里开始
 
-## 快速使用
+1. 先在[评测集](#评测集)里找和你的插件类型、使用场景接近的内容。
+2. 打开对应的 profile 和 cases 文件。
+3. 用里面的测试问题跑你的插件。
+4. 看回答是否符合预期，同时查看执行耗时等信息。
 
-1. 在[数据集目录](#数据集目录)中按插件类型和场景查找。
-2. 选择固定 Git tag 或 commit SHA。
-3. 让评测中心装载数据集的 profile、cases 和 metrics。
-4. 查看结果是否符合预期，以及执行耗时等观测指标。
+如果暂时没有适合的评测集，可以参考 [AI 辅助创作规范](AI_ASSISTED_AUTHORING.md) 先生成一份草案，再补充到这里。
 
-如果没有合适的数据集，可以参考 [AI 辅助创作规范](AI_ASSISTED_AUTHORING.md)生成草案，或提交自己的外部数据集进行收录。
+## 评测集
 
-## 数据集目录
-
-| 数据集 | 插件类型 | 覆盖场景 | 用例数 | 指标 | 来源 |
-| --- | --- | --- | ---: | --- | --- |
-| [知识查询基础评测](#知识查询基础评测) | `knowledge-query` | 退款、配送、发票 | 3 | `answer-matches-expected`, `duration` | 内置 |
+| 评测集 | 适用插件 | 覆盖场景 | 用例数 | 使用指标 |
+| --- | --- | --- | ---: | --- |
+| [知识查询基础评测](#知识查询基础评测) | `knowledge-query` | 退款、配送、发票 | 3 | `answer-matches-expected`、`duration` |
 
 ### 知识查询基础评测
 
-用于评测从已安装知识源中查询明确事实的插件，是一个小型入门数据集。
+这是一个小型入门评测集，适合从已安装知识源里查询明确事实的插件。
 
 - **ID：** `default-v1`
 - **版本：** `1.0.0`
-- **插件类型：** `knowledge-query`
-- **覆盖场景：** 退款申请时限、标准配送时效、电子发票发送渠道
+- **适用插件：** `knowledge-query`
+- **覆盖内容：** 退款申请时限、标准配送时效、电子发票发送渠道
 - **用例数：** 3
-- **Profile：** [`profiles/default-v1.json`](profiles/default-v1.json)
-- **Cases：** [`cases/default-v1.json`](cases/default-v1.json)
-- **来源：** 本仓库内置
+- **评测配置：** [`profiles/default-v1.json`](profiles/default-v1.json)
+- **测试用例：** [`cases/default-v1.json`](cases/default-v1.json)
 
-#### 测试用例
+#### 包含的测试用例
 
-| 用例 | 输入目标 | 预期结果 |
+| 用例 | 想检查什么 | 预期答案 |
 | --- | --- | --- |
-| 查询退款申请时限 | 查询默认退款申请时限 | `30 天` |
-| 查询标准配送时效 | 查询标准配送承诺时效 | `3 个工作日` |
-| 查询电子发票发送渠道 | 查询电子发票发送位置 | `订单绑定邮箱` |
+| 查询退款申请时限 | 默认退款申请要在多久内提交 | `30 天` |
+| 查询标准配送时效 | 标准配送承诺多久送达 | `3 个工作日` |
+| 查询电子发票发送渠道 | 电子发票会发送到哪里 | `订单绑定邮箱` |
 
-#### 评测指标
+#### 使用的指标
 
-- [`answer-matches-expected`](metrics/answer-matches-expected.json)：由 LLM Judge 判断最终输出是否符合预期，决定用例通过或失败。
-- [`duration`](metrics/duration.json)：记录执行耗时，不影响通过或失败。
+- [`answer-matches-expected`](metrics/answer-matches-expected.json)：判断插件最后的回答是否符合预期，决定这条用例是否通过。
+- [`duration`](metrics/duration.json)：记录这条用例跑了多久，不影响通过或失败。
 
-## 目录如何工作
+## 文件长什么样
 
-```text
-浏览目录 → 选择数据集 → 固定 tag / commit SHA → DSH 装载 → 运行评测
-```
-
-- **内置数据集**：profile 和 cases 由本仓库维护。
-- **外部数据集**：继续由作者自己的 GitHub 仓库维护，本目录只保存简介、固定版本和 profile 路径。
-
-外部数据集必须引用 `v1.0.0` 这类语义化 tag，或 40 位 commit SHA；不接受 `main` 等浮动分支。
-
-## 数据集格式
-
-一个数据集由 profile 和 cases 文件组成：
+一个评测集有两份文件：
 
 ```text
-profiles/<id>.json  指标与 casesPath
-cases/<id>.json     插件类型与测试用例
+profiles/<id>.json  用哪些指标，以及测试用例在哪里
+cases/<id>.json     插件类型和具体测试用例
 ```
 
-每条测试用例包含：
+一条测试用例很简单：
 
 ```json
 {
   "id": "case-id",
   "title": "用例标题",
-  "prompt": "发送给插件的输入",
-  "expected": "预期结果"
+  "prompt": "发给插件的问题",
+  "expected": "希望得到的答案"
 }
 ```
 
-评测中心读取 `casesPath`，逐条将 `prompt` 发给插件，再使用 profile 中的指标判断输出是否符合 `expected`。
+## 目前可用的指标
 
-## 当前 Runner 能力
-
-| 指标类型 | 当前 DSH 支持 | 是否影响通过 |
+| 指标类型 | 现在能用吗 | 会影响通过吗 |
 | --- | --- | --- |
-| `llm_judge` | 支持 | 可以 |
-| `observation` | 支持 | 不可以 |
-| `tool_trace` | 尚未支持 | 暂不可以 |
-| `threshold` | 尚未支持 | 暂不可以 |
+| `llm_judge` | 可以 | 会 |
+| `observation` | 可以 | 不会 |
+| `tool_trace` | 暂时不可以 | 不会 |
+| `threshold` | 暂时不可以 | 不会 |
 
-## 贡献数据集
+## 想补充评测集？
 
-- 贡献流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
-- 外部收录要求见 [`DATASET_LISTING.md`](DATASET_LISTING.md)。
-- 提交前运行：
+你可以直接在这个仓库里补充一个小型评测集；如果数据很多，也可以放在自己的仓库里，再把它加到目录中。
+
+提交前请先看：
+
+- [贡献指南](CONTRIBUTING.md)
+- [外部评测集收录说明](DATASET_LISTING.md)
+
+并运行：
 
 ```bash
 npm run validate
 npm test
 ```
 
-目录会核对内置数据集的简介、用例数、插件类型和指标是否与实际文件一致；外部条目会检查目录信息是否完整，以及是否固定到 GitHub tag 或 commit SHA。
+## 相关文档
 
-## 社区文档
-
-- [AI 辅助评测数据集创作](AI_ASSISTED_AUTHORING.md)
+- [AI 辅助评测集创作](AI_ASSISTED_AUTHORING.md)
+- [贡献指南](CONTRIBUTING.md)
 - [治理规范](GOVERNANCE.md)
-- [发布规范](RELEASING.md)
 - [安全政策](SECURITY.md)
-- [社区行为准则](CODE_OF_CONDUCT.md)
-- [未来官网信息架构](site/README.md)
-
-## 免责声明
-
-本目录不对数据集进行排名，也不认证其质量、正确性、安全性或适用性。使用前请检查数据内容和许可证。禁止提交 API Key、Token、密码、私有插件内容或无权公开的数据。
-
-本仓库内容使用 [CC0-1.0](LICENSE)。外部数据集可以使用不同许可证，以其自身仓库声明为准。
+- [CC0-1.0 许可证](LICENSE)

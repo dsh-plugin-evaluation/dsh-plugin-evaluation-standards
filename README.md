@@ -2,119 +2,97 @@
 
 English | [中文](README.zh.md) | [日本語](README.ja.md)
 
-> A community-maintained catalog of versioned evaluation datasets for DSH plugins.
+> A growing collection of evaluation datasets for DSH plugins.
 
-Use this repository to find a dataset for your plugin, inspect its test cases and metrics, and load a fixed version into the DSH plugin evaluation center. Dataset authors can keep larger datasets in their own GitHub repositories and submit a catalog entry here.
+Each dataset includes real prompts, expected answers, and the metrics used to check the result. Pick one that fits your plugin, run its cases, and use the results to understand how your plugin behaves.
 
-This is not an official DeepSeek or DSH project. Listing does not imply quality, security, or official certification.
+## Start here
 
-## Quick start
+1. Browse the [datasets](#datasets).
+2. Choose one that matches your plugin and the scenarios you want to cover.
+3. Open its profile and cases files.
+4. Run the cases against your plugin and review the results.
 
-1. Find a dataset by plugin type and scenario in the [dataset catalog](#dataset-catalog).
-2. Select a fixed Git tag or commit SHA.
-3. Let the evaluation center load the dataset profile, cases, and metrics.
-4. Review the results for expected-output matches and observations such as duration.
+Need a dataset that is not here yet? Use the [AI-assisted authoring guide](AI_ASSISTED_AUTHORING.md) to draft one, then contribute it.
 
-If no dataset fits, use the [AI-assisted authoring guide](AI_ASSISTED_AUTHORING.md) to draft one or submit an external dataset for listing.
+## Datasets
 
-## Dataset catalog
-
-| Dataset | Plugin type | Scenarios | Cases | Metrics | Source |
-| --- | --- | --- | ---: | --- | --- |
-| [Knowledge Query Basics](#knowledge-query-basics) | `knowledge-query` | Refunds, shipping, invoices | 3 | `answer-matches-expected`, `duration` | Bundled |
+| Dataset | Plugin type | Covers | Cases | Metrics |
+| --- | --- | --- | ---: | --- |
+| [Knowledge Query Basics](#knowledge-query-basics) | `knowledge-query` | Refunds, shipping, invoices | 3 | `answer-matches-expected`, `duration` |
 
 ### Knowledge Query Basics
 
-A small starter dataset for plugins that retrieve explicit facts from an installed knowledge source.
+A small starting set for plugins that look up clear facts from an installed knowledge source.
 
 - **ID:** `default-v1`
 - **Version:** `1.0.0`
 - **Plugin type:** `knowledge-query`
-- **Scenarios:** refund request window, standard shipping SLA, electronic invoice delivery channel
+- **Covers:** refund request windows, standard shipping time, and electronic invoice delivery
 - **Cases:** 3
 - **Profile:** [`profiles/default-v1.json`](profiles/default-v1.json)
-- **Cases file:** [`cases/default-v1.json`](cases/default-v1.json)
-- **Source:** bundled in this repository
+- **Cases:** [`cases/default-v1.json`](cases/default-v1.json)
 
-#### Test cases
+#### Included cases
 
-| Case | Input goal | Expected result |
+| Case | What it checks | Expected answer |
 | --- | --- | --- |
-| Refund request window | Query the default refund request deadline | `30 days` |
-| Standard shipping SLA | Query the promised standard shipping time | `3 business days` |
-| Electronic invoice channel | Query where an electronic invoice is sent | `Email address bound to the order` |
+| Refund request window | The default deadline for a refund request | `30 days` |
+| Standard shipping SLA | The promised time for standard shipping | `3 business days` |
+| Electronic invoice channel | Where an electronic invoice is sent | `Email address bound to the order` |
 
 #### Metrics
 
-- [`answer-matches-expected`](metrics/answer-matches-expected.json): an LLM judge checks whether the final output matches the expected result. This metric determines pass or fail.
-- [`duration`](metrics/duration.json): records execution time. This metric does not affect pass or fail.
+- [`answer-matches-expected`](metrics/answer-matches-expected.json) checks whether the final answer matches the expected answer. It decides whether a case passes.
+- [`duration`](metrics/duration.json) records how long the case takes. It does not change the pass/fail result.
 
-## How the catalog works
+## Dataset files
 
-```text
-Browse catalog → choose dataset → pin tag / commit SHA → load into DSH → run evaluation
-```
-
-- **Bundled datasets** keep their profile and cases in this repository.
-- **External datasets** remain in the author's GitHub repository. This catalog stores only their metadata, fixed version reference, and profile path.
-
-External listings must use a semantic version tag such as `v1.0.0` or a 40-character commit SHA. Floating branches such as `main` are not accepted.
-
-## Dataset format
-
-A dataset uses a profile plus a cases file:
+Each dataset has two files:
 
 ```text
-profiles/<id>.json  Metrics and casesPath
+profiles/<id>.json  Which metrics to use and where to find the cases
 cases/<id>.json     Plugin types and test cases
 ```
 
-Each test case contains:
+A test case looks like this:
 
 ```json
 {
   "id": "case-id",
-  "title": "Human-readable title",
-  "prompt": "Input sent to the plugin",
-  "expected": "Expected result"
+  "title": "A short name for the case",
+  "prompt": "The input sent to the plugin",
+  "expected": "The answer you expect"
 }
 ```
 
-The evaluation center follows `casesPath`, sends each `prompt` to the plugin, and evaluates the output against `expected` with the profile's metrics.
+## Supported metrics
 
-## Current runner support
-
-| Metric type | Supported by DSH | Can affect pass |
+| Metric type | Available now | Changes pass/fail |
 | --- | --- | --- |
 | `llm_judge` | Yes | Yes |
 | `observation` | Yes | No |
-| `tool_trace` | Not yet | Not yet |
-| `threshold` | Not yet | Not yet |
+| `tool_trace` | Not yet | No |
+| `threshold` | Not yet | No |
 
-## Contributing a dataset
+## Add a dataset
 
-- Use [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contribution workflow.
-- Use [`DATASET_LISTING.md`](DATASET_LISTING.md) for external listing requirements.
-- Run:
+You can contribute a small dataset directly to this repository, or keep a larger dataset in its own repository and add it to the catalog.
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+- Read [DATASET_LISTING.md](DATASET_LISTING.md) when adding an external dataset.
+- Run these checks before submitting:
 
 ```bash
 npm run validate
 npm test
 ```
 
-The catalog checks bundled dataset metadata against its real profile and cases. External entries are checked for complete metadata and a fixed GitHub version reference.
-
-## Community documents
+## Useful links
 
 - [AI-assisted dataset authoring](AI_ASSISTED_AUTHORING.md)
+- [Contribution guide](CONTRIBUTING.md)
+- [Dataset listing guide](DATASET_LISTING.md)
 - [Governance](GOVERNANCE.md)
-- [Releasing](RELEASING.md)
 - [Security policy](SECURITY.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Future website information architecture](site/README.md)
-
-## Disclaimer
-
-This catalog does not rank datasets and does not certify their quality, correctness, safety, or suitability. Review dataset content and licensing before use. Do not submit API keys, tokens, passwords, private plugin content, or data you are not authorized to publish.
-
-Repository content is released under [CC0-1.0](LICENSE). External datasets may use different licenses; their own repositories remain authoritative.
+- [CC0-1.0 license](LICENSE)
