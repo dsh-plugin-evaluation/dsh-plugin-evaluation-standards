@@ -1,77 +1,120 @@
-# DSH Plugin Evaluation Standards
+# DSH Plugin Evaluation Datasets
 
-社区维护的 DSH 插件评测数据集 Store。它帮助用户发现、固定版本装载和贡献插件评测数据集；不代表 DeepSeek、DSH 或其任何官方立场、认证或标准。
+English | [中文](README.zh.md) | [日本語](README.ja.md)
 
-本仓库以 [CC0-1.0](LICENSE) 发布。
+> A community-maintained catalog of versioned evaluation datasets for DSH plugins.
 
-## 找数据集
+Use this repository to find a dataset for your plugin, inspect its test cases and metrics, and load a fixed version into the DSH plugin evaluation center. Dataset authors can keep larger datasets in their own GitHub repositories and submit a catalog entry here.
 
-按插件类型和场景选择目录中的数据集；评测中心随后按固定版本装载。
+This is not an official DeepSeek or DSH project. Listing does not imply quality, security, or official certification.
 
-| 数据集 | 插件类型 | 覆盖场景 | 用例数 | 指标 | 来源 |
+## Quick start
+
+1. Find a dataset by plugin type and scenario in the [dataset catalog](#dataset-catalog).
+2. Select a fixed Git tag or commit SHA.
+3. Let the evaluation center load the dataset profile, cases, and metrics.
+4. Review the results for expected-output matches and observations such as duration.
+
+If no dataset fits, use the [AI-assisted authoring guide](AI_ASSISTED_AUTHORING.md) to draft one or submit an external dataset for listing.
+
+## Dataset catalog
+
+| Dataset | Plugin type | Scenarios | Cases | Metrics | Source |
 | --- | --- | --- | ---: | --- | --- |
-| [知识查询基础评测](profiles/default-v1.json) | `knowledge-query` | 退款、配送、发票 | 3 | `answer-matches-expected`, `duration` | 内置 |
+| [Knowledge Query Basics](#knowledge-query-basics) | `knowledge-query` | Refunds, shipping, invoices | 3 | `answer-matches-expected`, `duration` | Bundled |
 
-如果找不到合适的数据集，可以用 [AI 辅助创作规范](AI_ASSISTED_AUTHORING.md) 生成草案，或将自己的外部数据集提交到目录收录。
+### Knowledge Query Basics
 
-## Store 如何工作
+A small starter dataset for plugins that retrieve explicit facts from an installed knowledge source.
 
-```text
-浏览目录 → 选择数据集 → 固定 tag / commit SHA → 评测中心装载 → 运行插件评测
-```
+- **ID:** `default-v1`
+- **Version:** `1.0.0`
+- **Plugin type:** `knowledge-query`
+- **Scenarios:** refund request window, standard shipping SLA, electronic invoice delivery channel
+- **Cases:** 3
+- **Profile:** [`profiles/default-v1.json`](profiles/default-v1.json)
+- **Cases file:** [`cases/default-v1.json`](cases/default-v1.json)
+- **Source:** bundled in this repository
 
-- **内置数据集**：核心仓库维护少量基础 profile 与 cases。
-- **外部数据集**：作者在自己的 GitHub 仓库维护数据集，核心仓库只收录其目录条目和固定版本引用。
+#### Test cases
 
-被收录仅表示数据集可发现、版本已固定且目录信息经过核对；不表示质量优秀、安全无风险或官方认证。
-
-## 数据集结构
-
-内置数据集由方案和测试用例两部分组成：
-
-```text
-profiles/<id>.json  指标列表和 casesPath
-cases/<id>.json     插件类型与测试用例
-```
-
-评测中心读取 profile 的 `casesPath` 后，逐条将 case 的 `prompt` 发给插件，并按 profile 的 `metrics` 使用 `expected` 评估输出、记录耗时。
-
-外部数据集使用同一结构，但由它们自己的仓库和固定版本维护。
-
-## 指标能力矩阵
-
-| 指标类型 | 当前 DSH 支持 | 是否影响通过 |
+| Case | Input goal | Expected result |
 | --- | --- | --- |
-| `llm_judge` | 支持 | 可以 |
-| `observation` | 支持 | 不可以 |
-| `tool_trace` | 尚未支持 | 暂不可以 |
-| `threshold` | 尚未支持 | 暂不可以 |
+| Refund request window | Query the default refund request deadline | `30 days` |
+| Standard shipping SLA | Query the promised standard shipping time | `3 business days` |
+| Electronic invoice channel | Query where an electronic invoice is sent | `Email address bound to the order` |
 
-## 在 DSH 中使用
+#### Metrics
 
-DSH 拉取指定 release tag 或 commit SHA 的 `catalog.json`，选择数据集条目：
+- [`answer-matches-expected`](metrics/answer-matches-expected.json): an LLM judge checks whether the final output matches the expected result. This metric determines pass or fail.
+- [`duration`](metrics/duration.json): records execution time. This metric does not affect pass or fail.
 
-- 对内置数据集，读取本仓库指定的 profile、cases 和 metrics；
-- 对外部数据集，拉取条目 `source` 指向的仓库、固定版本和 profile 路径。
+## How the catalog works
 
-生产评测不得跟随 `main` 分支。每个实验应保存数据集 ID、仓库版本、commit SHA 和完整数据集快照。
+```text
+Browse catalog → choose dataset → pin tag / commit SHA → load into DSH → run evaluation
+```
 
-## 本地校验
+- **Bundled datasets** keep their profile and cases in this repository.
+- **External datasets** remain in the author's GitHub repository. This catalog stores only their metadata, fixed version reference, and profile path.
+
+External listings must use a semantic version tag such as `v1.0.0` or a 40-character commit SHA. Floating branches such as `main` are not accepted.
+
+## Dataset format
+
+A dataset uses a profile plus a cases file:
+
+```text
+profiles/<id>.json  Metrics and casesPath
+cases/<id>.json     Plugin types and test cases
+```
+
+Each test case contains:
+
+```json
+{
+  "id": "case-id",
+  "title": "Human-readable title",
+  "prompt": "Input sent to the plugin",
+  "expected": "Expected result"
+}
+```
+
+The evaluation center follows `casesPath`, sends each `prompt` to the plugin, and evaluates the output against `expected` with the profile's metrics.
+
+## Current runner support
+
+| Metric type | Supported by DSH | Can affect pass |
+| --- | --- | --- |
+| `llm_judge` | Yes | Yes |
+| `observation` | Yes | No |
+| `tool_trace` | Not yet | Not yet |
+| `threshold` | Not yet | Not yet |
+
+## Contributing a dataset
+
+- Use [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contribution workflow.
+- Use [`DATASET_LISTING.md`](DATASET_LISTING.md) for external listing requirements.
+- Run:
 
 ```bash
 npm run validate
 npm test
 ```
 
-## 社区文档
+The catalog checks bundled dataset metadata against its real profile and cases. External entries are checked for complete metadata and a fixed GitHub version reference.
 
-- [贡献指南](CONTRIBUTING.md)
-- [数据集收录规范](DATASET_LISTING.md)
-- [AI 辅助评测数据集创作](AI_ASSISTED_AUTHORING.md)
-- [治理规范](GOVERNANCE.md)
-- [发布规范](RELEASING.md)
-- [安全政策](SECURITY.md)
-- [社区行为准则](CODE_OF_CONDUCT.md)
-- [未来官网信息架构](site/README.md)
+## Community documents
 
-收录、审核或合并任一指标、数据集或贡献，均不构成对其质量、安全性或任何官方身份的认证。
+- [AI-assisted dataset authoring](AI_ASSISTED_AUTHORING.md)
+- [Governance](GOVERNANCE.md)
+- [Releasing](RELEASING.md)
+- [Security policy](SECURITY.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Future website information architecture](site/README.md)
+
+## Disclaimer
+
+This catalog does not rank datasets and does not certify their quality, correctness, safety, or suitability. Review dataset content and licensing before use. Do not submit API keys, tokens, passwords, private plugin content, or data you are not authorized to publish.
+
+Repository content is released under [CC0-1.0](LICENSE). External datasets may use different licenses; their own repositories remain authoritative.
