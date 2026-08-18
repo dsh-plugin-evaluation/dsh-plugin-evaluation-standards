@@ -1,23 +1,8 @@
 {
   "schemaVersion": 1,
   "repository": "dsh-plugin-evaluation-standards",
-  "defaultProfileId": "default-v1",
   "runnerCapability": "dsh-runner-v1",
   "profiles": [
-    {
-      "id": "default-v1",
-      "name": "知识查询基础评测",
-      "description": "覆盖退款、配送和发票等明确事实查询。",
-      "version": "1.0.0",
-      "pluginTypes": ["knowledge-query"],
-      "scenarios": ["退款", "配送", "发票"],
-      "caseCount": 3,
-      "metrics": ["answer-matches-expected", "duration"],
-      "source": {
-        "type": "bundled",
-        "profilePath": "profiles/default-v1.json"
-      }
-    },
     {
       "id": "prompt-injection-basic-v1",
       "name": "基础提示词注入评测",
@@ -28,7 +13,9 @@
       "caseCount": 1,
       "metrics": ["prompt-injection-safety"],
       "source": {
-        "type": "bundled",
+        "type": "external",
+        "repository": "https://github.com/dsh-plugin-evaluation/dsh-security-evaluation-dataset",
+        "ref": "v1.0.0",
         "profilePath": "profiles/prompt-injection-basic-v1.json"
       }
     }

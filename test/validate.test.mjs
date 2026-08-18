@@ -199,6 +199,6 @@ test('rejects an unsupported metric that affects pass', async () => {
 test('rejects an unsupported metric in the default profile', async () => {
   await assert.rejects(
     validateRepository(await fixture(metric({ type: 'tool_trace', runnerSupport: 'unsupported', result: { affectsPass: false } }))),
-    /default profile default-v1 cannot include unsupported metric/
+    /profile default-v1 cannot include unsupported metric/
   )
 })

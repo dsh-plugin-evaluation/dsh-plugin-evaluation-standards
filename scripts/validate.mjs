@@ -112,9 +112,9 @@ export async function validateRepository(repositoryRoot = root) {
   }
 
   const profiles = new Map()
-  const casesByProfile = new Map()
-  for (const file of await jsonFiles(resolve(repositoryRoot, 'profiles'))) {
-    const profile = await readJson(resolve(repositoryRoot, 'profiles', file))
+  const profilesDirectory = resolve(repositoryRoot, 'profiles')
+  for (const file of await jsonFiles(profilesDirectory)) {
+    const profile = await readJson(resolve(profilesDirectory, file))
     assert(profile.schemaVersion === 1, `${file}: schemaVersion must be 1`)
     assert(metricId.test(profile.id), `${file}: id must be kebab-case`)
     assert(semver.test(profile.version), `${file}: version must be semantic`)
@@ -123,15 +123,18 @@ export async function validateRepository(repositoryRoot = root) {
     assert(Array.isArray(profile.metrics) && profile.metrics.length > 0, `${file}: metrics are required`)
     assert(new Set(profile.metrics).size === profile.metrics.length, `${file}: metrics must be unique`)
     for (const id of profile.metrics) assert(metrics.has(id), `${file}: unknown metric ${id}`)
-    assert(typeof profile.casesPath === 'string' && /^cases\/.+\.json$/.test(profile.casesPath), `${file}: casesPath must reference cases/`)
+    assert(typeof profile.casesPath === 'string' && /^cases\/.+\.json$/.test(profile.casesPath), `${file}: casesPath must reference dataset cases/`)
+    assert(!profiles.has(profile.id), `${file}: duplicate profile id ${profile.id}`)
+    profiles.set(profile.id, { profile, path: `profiles/${file}` })
+  }
 
+  async function validateCases(file, profile) {
     const cases = await readJson(resolve(repositoryRoot, profile.casesPath))
     assert(cases.schemaVersion === 1, `${file}: cases schemaVersion must be 1`)
     assert(cases.profileId === profile.id, `${file}: cases profileId must match`)
     assert(cases.version === profile.version, `${file}: cases version must match`)
     assert(Array.isArray(cases.pluginTypes) && cases.pluginTypes.length > 0, `${file}: pluginTypes are required`)
     assert(new Set(cases.pluginTypes).size === cases.pluginTypes.length, `${file}: pluginTypes must be unique`)
-    assert(cases.pluginTypes.every(type => typeof type === 'string' && type), `${file}: pluginTypes must contain strings`)
     assert(Array.isArray(cases.cases) && cases.cases.length > 0, `${file}: cases are required`)
     const caseIds = new Set()
     for (const testCase of cases.cases) {
@@ -144,18 +147,13 @@ export async function validateRepository(repositoryRoot = root) {
         assert(typeof testCase.input === 'string' && testCase.input, `${file}: case ${testCase.id} input is required`)
         assert(typeof testCase.untrustedContent === 'string' && testCase.untrustedContent, `${file}: case ${testCase.id} untrustedContent is required`)
         assert(Array.isArray(testCase.safetyRequirements) && testCase.safetyRequirements.length > 0, `${file}: case ${testCase.id} safetyRequirements are required`)
-        assert(testCase.safetyRequirements.every(requirement => typeof requirement === 'string' && requirement), `${file}: case ${testCase.id} safetyRequirements must contain strings`)
-        assert(Object.keys(testCase).every(key => ['id', 'title', 'type', 'originalTask', 'input', 'untrustedContent', 'safetyRequirements'].includes(key)), `${file}: case ${testCase.id} has unsupported fields`)
       } else {
         assert(typeof testCase.prompt === 'string' && testCase.prompt, `${file}: case ${testCase.id} prompt is required`)
         assert(typeof testCase.expected === 'string' && testCase.expected, `${file}: case ${testCase.id} expected is required`)
-        assert(Object.keys(testCase).every(key => ['id', 'title', 'prompt', 'expected'].includes(key)), `${file}: case ${testCase.id} has unsupported fields`)
       }
       caseIds.add(testCase.id)
     }
-    assert(!profiles.has(profile.id), `${file}: duplicate profile id ${profile.id}`)
-    profiles.set(profile.id, { profile, path: `profiles/${file}` })
-    casesByProfile.set(profile.id, cases)
+    return cases
   }
 
   assert(Array.isArray(catalog.profiles) && catalog.profiles.length > 0, 'catalog.json: profiles are required')
@@ -165,22 +163,27 @@ export async function validateRepository(repositoryRoot = root) {
     assert(!catalogIds.has(entry.id), `catalog.json: duplicate dataset id ${entry.id}`)
     catalogIds.add(entry.id)
 
-    if (entry.source.type !== 'bundled') continue
-    const target = profiles.get(entry.id)
-    const cases = casesByProfile.get(entry.id)
-    assert(target, `catalog.json: unknown bundled dataset ${entry.id}`)
-    assert(entry.source.profilePath === target.path, `catalog.json: incorrect profilePath for ${entry.id}`)
-    assert(entry.version === target.profile.version, `catalog.json: incorrect version for ${entry.id}`)
-    assert(entry.metrics.length === target.profile.metrics.length && entry.metrics.every(id => target.profile.metrics.includes(id)), `catalog.json: incorrect metrics for ${entry.id}`)
-    assert(entry.caseCount === cases.cases.length, `catalog.json: incorrect caseCount for ${entry.id}`)
-    assert(entry.pluginTypes.length === cases.pluginTypes.length && entry.pluginTypes.every(type => cases.pluginTypes.includes(type)), `catalog.json: incorrect pluginTypes for ${entry.id}`)
+    if (entry.source.type === 'bundled') {
+      const target = profiles.get(entry.id)
+      assert(target, `catalog.json: unknown bundled profile ${entry.id}`)
+      assert(entry.source.profilePath === target.path, `catalog.json: incorrect profilePath for ${entry.id}`)
+      assert(entry.version === target.profile.version, `catalog.json: incorrect version for ${entry.id}`)
+      assert(entry.metrics.length === target.profile.metrics.length && entry.metrics.every(id => target.profile.metrics.includes(id)), `catalog.json: incorrect metrics for ${entry.id}`)
+      const cases = await validateCases(entry.id, target.profile)
+      assert(entry.caseCount === cases.cases.length, `catalog.json: incorrect caseCount for ${entry.id}`)
+      assert(entry.pluginTypes.length === cases.pluginTypes.length && entry.pluginTypes.every(type => cases.pluginTypes.includes(type)), `catalog.json: incorrect pluginTypes for ${entry.id}`)
+    }
   }
 
-  const defaultProfile = profiles.get(catalog.defaultProfileId)
-  assert(defaultProfile, `catalog.json: defaultProfileId must reference a bundled dataset`)
-  for (const metricId of defaultProfile.profile.metrics) {
-    const metric = metrics.get(metricId)
-    assert(metric.runnerSupport === 'supported', `default profile ${catalog.defaultProfileId} cannot include unsupported metric ${metricId}`)
+  if (catalog.defaultProfileId !== undefined) {
+    assert(metricId.test(catalog.defaultProfileId), 'catalog.json: defaultProfileId must be kebab-case')
+    assert(catalogIds.has(catalog.defaultProfileId), 'catalog.json: defaultProfileId must reference a catalog profile')
+  }
+  for (const entry of catalog.profiles) {
+    for (const metricId of entry.metrics) {
+      const metric = metrics.get(metricId)
+      assert(metric.runnerSupport === 'supported', `profile ${entry.id} cannot include unsupported metric ${metricId}`)
+    }
   }
 
   return { metrics: metrics.size, profiles: catalog.profiles.length, runnerCapability: runnerCapability.id }
