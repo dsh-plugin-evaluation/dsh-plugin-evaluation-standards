@@ -15,6 +15,16 @@ Each dataset is a profile (which metrics to use) and a cases file (test prompts 
 
 Need a dataset that is not here yet? Use the [AI-assisted authoring guide](AI_ASSISTED_AUTHORING.md) to draft one, then contribute it.
 
+## Build this collection with us
+
+Plugin authors, users, and people who know real business scenarios are all welcome. You do not need a finished JSON dataset to participate:
+
+- **Have a real scenario?** Open an [issue](https://github.com/dsh-plugin-evaluation/dsh-plugin-evaluation-standards/issues/new) with how a user would ask, what the plugin should do, and the supporting facts or setup conditions.
+- **Have a small set of cases?** Submit a profile and cases following the [contribution guide](CONTRIBUTING.md).
+- **Maintain a dataset long term?** Keep it in your own repository and add it to this catalog using the [external dataset listing guide](DATASET_LISTING.md).
+
+Common tasks, tricky conditions, and cases where a plugin should avoid making things up are all valuable. Do not submit private business material, personal data, or secrets.
+
 ## Datasets
 
 | Dataset | Plugin type | Covers | Cases | Metrics |
