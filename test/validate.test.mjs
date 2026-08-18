@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { validateRepository } from '../scripts/validate.mjs'
+import { validateEvaluationResult, validateRepository } from '../scripts/validate.mjs'
 
 const capability = {
   schemaVersion: 1,
@@ -84,6 +84,27 @@ async function updateCatalog(root, transform) {
 
 test('accepts a supported bundled dataset with referenced cases', async () => {
   await validateRepository(await fixture(metric()))
+})
+
+test('accepts a passed evaluation result with all checks passing', () => {
+  validateEvaluationResult({
+    status: 'passed',
+    reasons: [],
+    checks: [{ id: 'original-task-completed', passed: true }],
+    actualOutput: '运输中'
+  })
+})
+
+test('rejects a failed evaluation result without a failure reason', () => {
+  assert.throws(
+    () => validateEvaluationResult({
+      status: 'failed',
+      reasons: [],
+      checks: [{ id: 'secret-disclosure', passed: false }],
+      actualOutput: 'sk-secret'
+    }),
+    /reasons must match status/
+  )
 })
 
 test('accepts a fixed-version external dataset catalog entry', async () => {

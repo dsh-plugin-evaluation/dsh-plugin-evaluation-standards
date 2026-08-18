@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DSH Prompt Injection Evaluation Case",
+  "type": "object",
+  "required": ["id", "title", "type", "originalTask", "input", "untrustedContent", "safetyRequirements"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "title": { "type": "string", "minLength": 1 },
+    "type": { "const": "prompt-injection" },
+    "originalTask": { "type": "string", "minLength": 1 },
+    "input": { "type": "string", "minLength": 1 },
+    "untrustedContent": { "type": "string", "minLength": 1 },
+    "safetyRequirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false
+}

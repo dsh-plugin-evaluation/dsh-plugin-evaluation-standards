@@ -16,6 +16,24 @@ async function jsonFiles(directory) {
   return (await readdir(directory)).filter(file => file.endsWith('.json')).sort()
 }
 
+export function validateEvaluationResult(result) {
+  assert(result && typeof result === 'object', 'evaluation result must be an object')
+  assert(['passed', 'failed'].includes(result.status), 'evaluation result status must be passed or failed')
+  assert(Array.isArray(result.reasons), 'evaluation result reasons must be an array')
+  assert(Array.isArray(result.checks) && result.checks.length > 0, 'evaluation result checks are required')
+  assert(typeof result.actualOutput === 'string', 'evaluation result actualOutput is required')
+
+  const failedChecks = result.checks.filter(check => !check.passed)
+  assert(result.status === 'failed' ? failedChecks.length > 0 : failedChecks.length === 0, 'evaluation result status must match failed checks')
+  assert(result.status === 'failed' ? result.reasons.length > 0 : result.reasons.length === 0, 'evaluation result reasons must match status')
+  for (const check of result.checks) {
+    assert(check && typeof check === 'object', 'evaluation result check must be an object')
+    assert(metricId.test(check.id), 'evaluation result check id must be kebab-case')
+    assert(typeof check.passed === 'boolean', `evaluation result check ${check.id} passed must be boolean`)
+    if (!check.passed) assert(typeof check.reason === 'string' && check.reason, `evaluation result check ${check.id} reason is required`)
+  }
+}
+
 function validateCatalogEntry(entry, metrics) {
   assert(metricId.test(entry.id), `catalog.json: dataset id must be kebab-case`)
   assert(typeof entry.name === 'string' && entry.name, `catalog.json: dataset ${entry.id} name is required`)
@@ -121,9 +139,18 @@ export async function validateRepository(repositoryRoot = root) {
       assert(metricId.test(testCase.id), `${file}: case id must be kebab-case`)
       assert(!caseIds.has(testCase.id), `${file}: duplicate case id ${testCase.id}`)
       assert(typeof testCase.title === 'string' && testCase.title, `${file}: case ${testCase.id} title is required`)
-      assert(typeof testCase.prompt === 'string' && testCase.prompt, `${file}: case ${testCase.id} prompt is required`)
-      assert(typeof testCase.expected === 'string' && testCase.expected, `${file}: case ${testCase.id} expected is required`)
-      assert(Object.keys(testCase).every(key => ['id', 'title', 'prompt', 'expected'].includes(key)), `${file}: case ${testCase.id} has unsupported fields`)
+      if (testCase.type === 'prompt-injection') {
+        assert(typeof testCase.originalTask === 'string' && testCase.originalTask, `${file}: case ${testCase.id} originalTask is required`)
+        assert(typeof testCase.input === 'string' && testCase.input, `${file}: case ${testCase.id} input is required`)
+        assert(typeof testCase.untrustedContent === 'string' && testCase.untrustedContent, `${file}: case ${testCase.id} untrustedContent is required`)
+        assert(Array.isArray(testCase.safetyRequirements) && testCase.safetyRequirements.length > 0, `${file}: case ${testCase.id} safetyRequirements are required`)
+        assert(testCase.safetyRequirements.every(requirement => typeof requirement === 'string' && requirement), `${file}: case ${testCase.id} safetyRequirements must contain strings`)
+        assert(Object.keys(testCase).every(key => ['id', 'title', 'type', 'originalTask', 'input', 'untrustedContent', 'safetyRequirements'].includes(key)), `${file}: case ${testCase.id} has unsupported fields`)
+      } else {
+        assert(typeof testCase.prompt === 'string' && testCase.prompt, `${file}: case ${testCase.id} prompt is required`)
+        assert(typeof testCase.expected === 'string' && testCase.expected, `${file}: case ${testCase.id} expected is required`)
+        assert(Object.keys(testCase).every(key => ['id', 'title', 'prompt', 'expected'].includes(key)), `${file}: case ${testCase.id} has unsupported fields`)
+      }
       caseIds.add(testCase.id)
     }
     assert(!profiles.has(profile.id), `${file}: duplicate profile id ${profile.id}`)
