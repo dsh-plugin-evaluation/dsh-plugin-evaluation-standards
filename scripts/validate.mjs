@@ -7,6 +7,9 @@ const metricId = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const semver = /^\d+\.\d+\.\d+$/
 const commitSha = /^[0-9a-f]{40}$/
 const metricTypes = ['llm_judge', 'observation', 'tool_trace', 'threshold']
+const caseTypes = ['prompt-injection']
+const portableSetupOperations = ['environment.set', 'workspace.write', 'workspace.read']
+const portableAssertionOperations = ['output.equals', 'output.contains', 'output.notContains']
 
 function assert(condition, message) {
   if (!condition) throw new Error(message)
@@ -31,6 +34,41 @@ export function validateEvaluationResult(result) {
     assert(metricId.test(check.id), 'evaluation result check id must be kebab-case')
     assert(typeof check.passed === 'boolean', `evaluation result check ${check.id} passed must be boolean`)
     if (!check.passed) assert(typeof check.reason === 'string' && check.reason, `evaluation result check ${check.id} reason is required`)
+  }
+}
+
+function validateRelativePath(path, label) {
+  assert(typeof path === 'string' && path.length > 0, `${label} path is required`)
+  assert(!path.startsWith('/') && !path.includes('\0') && !path.split('/').includes('..'), `${label} path must be relative to the case workspace`)
+}
+
+export function validatePortableCasePlan(plan) {
+  assert(plan && typeof plan === 'object' && !Array.isArray(plan), 'portable case plan must be an object')
+  assert(plan.schemaVersion === 1, 'portable case plan schemaVersion must be 1')
+  assert(metricId.test(plan.id), 'portable case plan id must be kebab-case')
+  assert(typeof plan.title === 'string' && plan.title, `portable case plan ${plan.id} title is required`)
+  assert(Array.isArray(plan.setup), `portable case plan ${plan.id} setup is required`)
+  assert(plan.run && typeof plan.run === 'object' && !Array.isArray(plan.run), `portable case plan ${plan.id} run is required`)
+  assert(plan.run.op === 'plugin.prompt', `portable case plan ${plan.id} run must use plugin.prompt`)
+  assert(typeof plan.run.input === 'string' && plan.run.input, `portable case plan ${plan.id} run input is required`)
+  assert(Array.isArray(plan.assertions) && plan.assertions.length > 0, `portable case plan ${plan.id} assertions are required`)
+
+  for (const [index, action] of plan.setup.entries()) {
+    assert(action && typeof action === 'object' && !Array.isArray(action), `portable case plan ${plan.id} setup ${index} must be an object`)
+    assert(portableSetupOperations.includes(action.op), `portable case plan ${plan.id} setup ${index} has unsupported operation`)
+    if (action.op === 'environment.set') {
+      assert(/^[A-Za-z_][A-Za-z0-9_]*$/.test(action.name), `portable case plan ${plan.id} setup ${index} environment name is invalid`)
+      assert(typeof action.value === 'string' && !action.value.includes('\0'), `portable case plan ${plan.id} setup ${index} environment value is invalid`)
+    } else {
+      validateRelativePath(action.path, `portable case plan ${plan.id} setup ${index}`)
+      if (action.op === 'workspace.write') assert(typeof action.content === 'string', `portable case plan ${plan.id} setup ${index} content is required`)
+    }
+  }
+
+  for (const [index, assertion] of plan.assertions.entries()) {
+    assert(assertion && typeof assertion === 'object' && !Array.isArray(assertion), `portable case plan ${plan.id} assertion ${index} must be an object`)
+    assert(portableAssertionOperations.includes(assertion.op), `portable case plan ${plan.id} assertion ${index} has unsupported operation`)
+    assert(typeof assertion.value === 'string', `portable case plan ${plan.id} assertion ${index} value is required`)
   }
 }
 
@@ -142,9 +180,11 @@ export async function validateRepository(repositoryRoot = root) {
       assert(metricId.test(testCase.id), `${file}: case id must be kebab-case`)
       assert(!caseIds.has(testCase.id), `${file}: duplicate case id ${testCase.id}`)
       assert(typeof testCase.title === 'string' && testCase.title, `${file}: case ${testCase.id} title is required`)
+      if (testCase.type !== undefined) assert(caseTypes.includes(testCase.type), `${file}: case ${testCase.id} unsupported type`)
       if (testCase.type === 'prompt-injection') {
         assert(typeof testCase.originalTask === 'string' && testCase.originalTask, `${file}: case ${testCase.id} originalTask is required`)
         assert(typeof testCase.input === 'string' && testCase.input, `${file}: case ${testCase.id} input is required`)
+        assert(typeof testCase.expectedOutput === 'string' && testCase.expectedOutput, `${file}: case ${testCase.id} expectedOutput is required`)
         assert(typeof testCase.untrustedContent === 'string' && testCase.untrustedContent, `${file}: case ${testCase.id} untrustedContent is required`)
         assert(Array.isArray(testCase.safetyRequirements) && testCase.safetyRequirements.length > 0, `${file}: case ${testCase.id} safetyRequirements are required`)
       } else {

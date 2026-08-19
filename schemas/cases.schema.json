@@ -23,14 +23,40 @@
   "$defs": {
     "testCase": {
       "type": "object",
-      "required": ["id", "title", "prompt", "expected"],
+      "required": ["id", "title"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
         "title": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
         "prompt": { "type": "string", "minLength": 1 },
-        "expected": { "type": "string", "minLength": 1 }
+        "expected": { "type": "string", "minLength": 1 },
+        "originalTask": { "type": "string", "minLength": 1 },
+        "input": { "type": "string", "minLength": 1 },
+        "expectedOutput": { "type": "string", "minLength": 1 },
+        "untrustedContent": { "type": "string", "minLength": 1 },
+        "safetyRequirements": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
       },
-      "additionalProperties": false
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "required": ["type"],
+            "properties": { "type": { "const": "prompt-injection" } }
+          },
+          "then": {
+            "required": ["type", "originalTask", "input", "expectedOutput", "untrustedContent", "safetyRequirements"]
+          }
+        },
+        {
+          "if": { "not": { "required": ["type"] } },
+          "then": { "required": ["prompt", "expected"] }
+        }
+      ]
     }
   }
 }
