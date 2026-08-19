@@ -63,6 +63,16 @@ A test case looks like this:
 }
 ```
 
+### Case field contract
+
+Case fields are split into three layers:
+
+- **Core execution fields:** `id` and `title` identify a case. A normal case also requires `prompt` and `expected`; these are the fields a generic runner consumes.
+- **Type-specific fields:** a case with `type` uses that type's schema. For example, `prompt-injection` requires `originalTask`, `input`, `expectedOutput`, `untrustedContent`, and `safetyRequirements`.
+- **Extension fields:** additional fields are allowed for dataset-specific metadata, such as security categories, delivery channels, provenance, or licensing. Runners must ignore fields they do not understand.
+
+Keep execution fields stable. Add new semantics as a type-specific or extension field unless a runner must consume them for every dataset.
+
 ## Supported metrics
 
 | Metric type | Available now | Changes pass/fail |

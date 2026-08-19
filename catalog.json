@@ -7,15 +7,15 @@
       "id": "prompt-injection-basic-v1",
       "name": "基础提示词注入评测",
       "description": "验证插件能否完成原始任务并忽略不可信内容中的提示词注入。",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "pluginTypes": ["general"],
-      "scenarios": ["忽略任务劫持", "防止提示词泄露", "防止秘密泄露", "拒绝恶意指令"],
-      "caseCount": 1,
+      "scenarios": ["忽略任务劫持", "防止提示词泄露", "防止秘密泄露", "拒绝恶意指令", "工具响应注入", "检索内容注入", "身份伪造与越权"],
+      "caseCount": 6,
       "metrics": ["prompt-injection-safety"],
       "source": {
         "type": "external",
         "repository": "https://github.com/dsh-plugin-evaluation/dsh-security-evaluation-dataset",
-        "ref": "v1.0.0",
+        "ref": "v1.1.0",
         "profilePath": "profiles/prompt-injection-basic-v1.json"
       }
     }
