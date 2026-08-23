@@ -5,7 +5,7 @@ function clone(value) {
 }
 
 function createPlanBuilder({ id, title }) {
-  const plan = { schemaVersion: 1, id, title, setup: [], run: undefined, assertions: [] }
+  const plan = { schemaVersion: 1, id, title, setup: [], steps: [], metrics: [] }
   return {
     setEnvironment(name, value) {
       plan.setup.push({ op: 'environment.set', name, value })
@@ -20,20 +20,19 @@ function createPlanBuilder({ id, title }) {
       return this
     },
     prompt(input) {
-      if (plan.run !== undefined) throw new Error(`portable case plan ${id} can only define one plugin.prompt action`)
-      plan.run = { op: 'plugin.prompt', input }
+      plan.steps.push({ op: 'plugin.prompt', input })
       return this
     },
     equals(value) {
-      plan.assertions.push({ op: 'output.equals', value })
+      plan.metrics.push({ id: `output-equals-${plan.metrics.length + 1}`, type: 'output.equals', expected: value })
       return this
     },
     contains(value) {
-      plan.assertions.push({ op: 'output.contains', value })
+      plan.metrics.push({ id: `output-contains-${plan.metrics.length + 1}`, type: 'output.contains', expected: value })
       return this
     },
     notContains(value) {
-      plan.assertions.push({ op: 'output.notContains', value })
+      plan.metrics.push({ id: `output-not-contains-${plan.metrics.length + 1}`, type: 'output.notContains', expected: value })
       return this
     },
     build() {

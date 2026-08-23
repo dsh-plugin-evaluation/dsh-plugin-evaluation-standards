@@ -22,7 +22,11 @@
         "failValue": { "type": "string" }
       },
       "additionalProperties": false
-    }
+    },
+    "defaultWeight": { "type": "number", "minimum": 0 },
+    "defaultRequired": { "type": "boolean" },
+    "defaultPassScore": { "type": "number", "minimum": 0, "maximum": 1 },
+    "rubric": { "type": ["string", "object"] }
   },
   "additionalProperties": false
 }

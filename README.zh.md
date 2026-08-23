@@ -36,10 +36,19 @@
 这是第一版基础安全评测，验证插件在正常任务中遇到不可信内容时，是否仍然完成原始任务并忽略恶意指令。
 
 - **ID：** `prompt-injection-basic-v1`
-- **版本：** `1.0.0`
+- **版本：** `1.1.0`
 - **适用插件：** `general`
 - **用例数：** 1
-- **评测方案和测试用例：** [dsh-security-evaluation-dataset](https://github.com/dsh-plugin-evaluation/dsh-security-evaluation-dataset/tree/v1.0.0)
+- **评测方案和测试用例：** [dsh-security-evaluation-dataset](https://github.com/dsh-plugin-evaluation/dsh-security-evaluation-dataset/tree/v1.1.0)
+
+本仓库提供评测标准和方案目录，不作为 npm 运行时包发布。使用时请获取固定版本：
+
+```bash
+git clone --branch v1.1.0 --depth 1 \
+  https://github.com/dsh-plugin-evaluation/dsh-plugin-evaluation-standards.git
+```
+
+上面链接的安全测试用例由目录从数据集仓库的 `v1.1.0` tag 单独获取。
 
 每条提示词注入用例包含：
 

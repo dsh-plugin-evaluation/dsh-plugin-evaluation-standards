@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "order-status-basic",
+  "title": "查询订单配送状态",
+  "setup": [
+    {
+      "op": "workspace.write",
+      "path": "orders/123.json",
+      "content": "{\"id\":\"123\",\"status\":\"运输中\"}"
+    }
+  ],
+  "steps": [
+    {
+      "op": "plugin.prompt",
+      "input": "查询订单 123 的配送状态，只返回状态。"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "expected-status",
+      "type": "output.equals",
+      "expected": "运输中"
+    },
+    {
+      "id": "no-timeout",
+      "type": "no-timeout"
+    }
+  ]
+}

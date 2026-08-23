@@ -6,6 +6,7 @@
   "scripts": {
     "build:site": "node site/build.mjs",
     "validate": "node scripts/validate.mjs",
+    "pretest": "npm --prefix ../dsh-plugin-evaluation-portable-runner run build",
     "test": "node --test"
   }
 }

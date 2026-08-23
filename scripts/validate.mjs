@@ -9,7 +9,7 @@ const commitSha = /^[0-9a-f]{40}$/
 const metricTypes = ['llm_judge', 'observation', 'tool_trace', 'threshold']
 const caseTypes = ['prompt-injection']
 const portableSetupOperations = ['environment.set', 'workspace.write', 'workspace.read']
-const portableAssertionOperations = ['output.equals', 'output.contains', 'output.notContains']
+const portableStepOperations = ['environment.set', 'workspace.write', 'workspace.read', 'plugin.prompt']
 
 function assert(condition, message) {
   if (!condition) throw new Error(message)
@@ -26,14 +26,30 @@ export function validateEvaluationResult(result) {
   assert(Array.isArray(result.checks) && result.checks.length > 0, 'evaluation result checks are required')
   assert(typeof result.actualOutput === 'string', 'evaluation result actualOutput is required')
 
+  for (const check of result.checks) assert(check && typeof check === 'object', 'evaluation result check must be an object')
   const failedChecks = result.checks.filter(check => !check.passed)
   assert(result.status === 'failed' ? failedChecks.length > 0 : failedChecks.length === 0, 'evaluation result status must match failed checks')
   assert(result.status === 'failed' ? result.reasons.length > 0 : result.reasons.length === 0, 'evaluation result reasons must match status')
   for (const check of result.checks) {
-    assert(check && typeof check === 'object', 'evaluation result check must be an object')
     assert(metricId.test(check.id), 'evaluation result check id must be kebab-case')
     assert(typeof check.passed === 'boolean', `evaluation result check ${check.id} passed must be boolean`)
+    if (check.score !== undefined) assert(typeof check.score === 'number' && Number.isFinite(check.score) && check.score >= 0 && check.score <= 1, `evaluation result check ${check.id} score must be between 0 and 1`)
+    if (check.weight !== undefined) assert(typeof check.weight === 'number' && Number.isFinite(check.weight) && check.weight >= 0, `evaluation result check ${check.id} weight must be non-negative`)
+    if (check.required !== undefined) assert(typeof check.required === 'boolean', `evaluation result check ${check.id} required must be boolean`)
+    if (check.confidence !== undefined) assert(typeof check.confidence === 'number' && Number.isFinite(check.confidence) && check.confidence >= 0 && check.confidence <= 1, `evaluation result check ${check.id} confidence must be between 0 and 1`)
+    if (check.details !== undefined) assert(check.details && typeof check.details === 'object' && !Array.isArray(check.details), `evaluation result check ${check.id} details must be an object`)
     if (!check.passed) assert(typeof check.reason === 'string' && check.reason, `evaluation result check ${check.id} reason is required`)
+  }
+  if (result.score !== undefined) {
+    const score = result.score
+    assert(score && typeof score === 'object' && !Array.isArray(score), 'evaluation result score must be an object')
+    assert(typeof score.value === 'number' && Number.isFinite(score.value) && score.value >= 0 && score.value <= 1, 'evaluation result score value must be between 0 and 1')
+    assert(score.scale === '0..1', 'evaluation result score scale must be 0..1')
+    if (score.passScore !== undefined) assert(typeof score.passScore === 'number' && Number.isFinite(score.passScore) && score.passScore >= 0 && score.passScore <= 1, 'evaluation result score passScore must be between 0 and 1')
+    assert(typeof score.totalWeight === 'number' && Number.isFinite(score.totalWeight) && score.totalWeight >= 0, 'evaluation result score totalWeight must be non-negative')
+    assert(typeof score.requiredPassed === 'boolean', 'evaluation result score requiredPassed must be boolean')
+    assert(typeof score.passed === 'boolean', 'evaluation result score passed must be boolean')
+    assert(score.passed === (result.status === 'passed'), 'evaluation result score must match status')
   }
 }
 
@@ -48,27 +64,42 @@ export function validatePortableCasePlan(plan) {
   assert(metricId.test(plan.id), 'portable case plan id must be kebab-case')
   assert(typeof plan.title === 'string' && plan.title, `portable case plan ${plan.id} title is required`)
   assert(Array.isArray(plan.setup), `portable case plan ${plan.id} setup is required`)
-  assert(plan.run && typeof plan.run === 'object' && !Array.isArray(plan.run), `portable case plan ${plan.id} run is required`)
-  assert(plan.run.op === 'plugin.prompt', `portable case plan ${plan.id} run must use plugin.prompt`)
-  assert(typeof plan.run.input === 'string' && plan.run.input, `portable case plan ${plan.id} run input is required`)
-  assert(Array.isArray(plan.assertions) && plan.assertions.length > 0, `portable case plan ${plan.id} assertions are required`)
+  assert(Array.isArray(plan.steps) && plan.steps.length > 0, `portable case plan ${plan.id} steps are required`)
+  assert(Array.isArray(plan.metrics) && plan.metrics.length > 0, `portable case plan ${plan.id} metrics are required`)
 
-  for (const [index, action] of plan.setup.entries()) {
-    assert(action && typeof action === 'object' && !Array.isArray(action), `portable case plan ${plan.id} setup ${index} must be an object`)
-    assert(portableSetupOperations.includes(action.op), `portable case plan ${plan.id} setup ${index} has unsupported operation`)
+  const actions = [...plan.setup, ...plan.steps]
+  for (const [index, action] of actions.entries()) {
+    assert(action && typeof action === 'object' && !Array.isArray(action), `portable case plan ${plan.id} action ${index} must be an object`)
+    assert(/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/.test(action.op), `portable case plan ${plan.id} action ${index} operation is invalid`)
     if (action.op === 'environment.set') {
-      assert(/^[A-Za-z_][A-Za-z0-9_]*$/.test(action.name), `portable case plan ${plan.id} setup ${index} environment name is invalid`)
-      assert(typeof action.value === 'string' && !action.value.includes('\0'), `portable case plan ${plan.id} setup ${index} environment value is invalid`)
-    } else {
-      validateRelativePath(action.path, `portable case plan ${plan.id} setup ${index}`)
-      if (action.op === 'workspace.write') assert(typeof action.content === 'string', `portable case plan ${plan.id} setup ${index} content is required`)
+      assert(/^[A-Za-z_][A-Za-z0-9_]*$/.test(action.name), `portable case plan ${plan.id} action ${index} environment name is invalid`)
+      assert(typeof action.value === 'string' && !action.value.includes('\0'), `portable case plan ${plan.id} action ${index} environment value is invalid`)
+    } else if (action.op === 'plugin.prompt') {
+      assert(typeof action.input === 'string' && action.input, `portable case plan ${plan.id} action ${index} input is required`)
+    } else if (action.op === 'workspace.write' || action.op === 'workspace.read') {
+      validateRelativePath(action.path, `portable case plan ${plan.id} action ${index}`)
+      if (action.op === 'workspace.write') assert(typeof action.content === 'string', `portable case plan ${plan.id} action ${index} content is required`)
     }
   }
 
-  for (const [index, assertion] of plan.assertions.entries()) {
-    assert(assertion && typeof assertion === 'object' && !Array.isArray(assertion), `portable case plan ${plan.id} assertion ${index} must be an object`)
-    assert(portableAssertionOperations.includes(assertion.op), `portable case plan ${plan.id} assertion ${index} has unsupported operation`)
-    assert(typeof assertion.value === 'string', `portable case plan ${plan.id} assertion ${index} value is required`)
+  const metricIds = new Set()
+  for (const [index, metric] of plan.metrics.entries()) {
+    assert(metric && typeof metric === 'object' && !Array.isArray(metric), `portable case plan ${plan.id} metric ${index} must be an object`)
+    assert(metricId.test(metric.id), `portable case plan ${plan.id} metric ${index} id must be kebab-case`)
+    assert(!metricIds.has(metric.id), `portable case plan ${plan.id} metric ${index} id is duplicated`)
+    assert(typeof metric.type === 'string' && metric.type, `portable case plan ${plan.id} metric ${index} type is required`)
+    if (metric.weight !== undefined) assert(typeof metric.weight === 'number' && Number.isFinite(metric.weight) && metric.weight >= 0, `portable case plan ${plan.id} metric ${index} weight is invalid`)
+    if (metric.passScore !== undefined) assert(typeof metric.passScore === 'number' && Number.isFinite(metric.passScore) && metric.passScore >= 0 && metric.passScore <= 1, `portable case plan ${plan.id} metric ${index} passScore is invalid`)
+    if (metric.required !== undefined) assert(typeof metric.required === 'boolean', `portable case plan ${plan.id} metric ${index} required is invalid`)
+    metricIds.add(metric.id)
+  }
+
+  if (plan.scoring !== undefined) {
+    assert(plan.scoring && typeof plan.scoring === 'object' && !Array.isArray(plan.scoring), `portable case plan ${plan.id} scoring must be an object`)
+    if (plan.scoring.method !== undefined) assert(plan.scoring.method === 'weighted-average', `portable case plan ${plan.id} scoring method is unsupported`)
+    if (plan.scoring.passScore !== undefined) assert(typeof plan.scoring.passScore === 'number' && plan.scoring.passScore >= 0 && plan.scoring.passScore <= 1, `portable case plan ${plan.id} scoring passScore is invalid`)
+    if (plan.scoring.weights !== undefined) assert(plan.scoring.weights && typeof plan.scoring.weights === 'object' && !Array.isArray(plan.scoring.weights) && Object.values(plan.scoring.weights).every(weight => typeof weight === 'number' && Number.isFinite(weight) && weight >= 0) && Object.keys(plan.scoring.weights).every(id => metricIds.has(id)), `portable case plan ${plan.id} scoring weights are invalid`)
+    if (plan.scoring.required !== undefined) assert(Array.isArray(plan.scoring.required) && plan.scoring.required.every(id => metricId.test(id) && metricIds.has(id)) && new Set(plan.scoring.required).size === plan.scoring.required.length, `portable case plan ${plan.id} scoring required is invalid`)
   }
 }
 
@@ -141,6 +172,10 @@ export async function validateRepository(repositoryRoot = root) {
     assert(['supported', 'unsupported'].includes(metric.runnerSupport), `${file}: runnerSupport must be supported or unsupported`)
     assert(typeof metric.description === 'string' && metric.description, `${file}: description is required`)
     assert(typeof metric.result?.affectsPass === 'boolean', `${file}: result.affectsPass must be boolean`)
+    if (metric.defaultWeight !== undefined) assert(typeof metric.defaultWeight === 'number' && Number.isFinite(metric.defaultWeight) && metric.defaultWeight >= 0, `${file}: defaultWeight must be non-negative`)
+    if (metric.defaultRequired !== undefined) assert(typeof metric.defaultRequired === 'boolean', `${file}: defaultRequired must be boolean`)
+    if (metric.defaultPassScore !== undefined) assert(typeof metric.defaultPassScore === 'number' && metric.defaultPassScore >= 0 && metric.defaultPassScore <= 1, `${file}: defaultPassScore must be between 0 and 1`)
+    if (metric.rubric !== undefined) assert(typeof metric.rubric === 'string' || (metric.rubric && typeof metric.rubric === 'object' && !Array.isArray(metric.rubric)), `${file}: rubric must be a string or object`)
 
     const typeCapability = runnerCapability.metricTypes[metric.type]
     assert(typeCapability.supported === (metric.runnerSupport === 'supported'), `${file}: ${metric.type} is ${typeCapability.supported ? 'supported' : 'not supported'} by ${runnerCapability.id}`)
@@ -161,6 +196,13 @@ export async function validateRepository(repositoryRoot = root) {
     assert(Array.isArray(profile.metrics) && profile.metrics.length > 0, `${file}: metrics are required`)
     assert(new Set(profile.metrics).size === profile.metrics.length, `${file}: metrics must be unique`)
     for (const id of profile.metrics) assert(metrics.has(id), `${file}: unknown metric ${id}`)
+    if (profile.scoring !== undefined) {
+      assert(profile.scoring && typeof profile.scoring === 'object' && !Array.isArray(profile.scoring), `${file}: scoring must be an object`)
+      if (profile.scoring.method !== undefined) assert(profile.scoring.method === 'weighted-average', `${file}: scoring method is unsupported`)
+      if (profile.scoring.passScore !== undefined) assert(typeof profile.scoring.passScore === 'number' && Number.isFinite(profile.scoring.passScore) && profile.scoring.passScore >= 0 && profile.scoring.passScore <= 1, `${file}: scoring passScore must be between 0 and 1`)
+      if (profile.scoring.weights !== undefined) assert(profile.scoring.weights && typeof profile.scoring.weights === 'object' && !Array.isArray(profile.scoring.weights) && Object.values(profile.scoring.weights).every(weight => typeof weight === 'number' && Number.isFinite(weight) && weight >= 0), `${file}: scoring weights are invalid`)
+      if (profile.scoring.required !== undefined) assert(Array.isArray(profile.scoring.required) && profile.scoring.required.every(id => metricId.test(id)) && new Set(profile.scoring.required).size === profile.scoring.required.length, `${file}: scoring required is invalid`)
+    }
     assert(typeof profile.casesPath === 'string' && /^cases\/.+\.json$/.test(profile.casesPath), `${file}: casesPath must reference dataset cases/`)
     assert(!profiles.has(profile.id), `${file}: duplicate profile id ${profile.id}`)
     profiles.set(profile.id, { profile, path: `profiles/${file}` })

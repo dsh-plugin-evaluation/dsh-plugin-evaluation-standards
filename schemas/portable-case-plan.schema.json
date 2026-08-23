@@ -2,14 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DSH Portable Case Plan",
   "type": "object",
-  "required": ["schemaVersion", "id", "title", "setup", "run", "assertions"],
+  "required": ["schemaVersion", "id", "title", "setup", "steps", "metrics"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
     "title": { "type": "string", "minLength": 1 },
     "setup": { "type": "array", "items": { "$ref": "#/$defs/setupAction" } },
-    "run": { "$ref": "#/$defs/runAction" },
-    "assertions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/assertion" } }
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } },
+    "metrics": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/metric" } },
+    "scoring": { "$ref": "#/$defs/scoring" }
   },
   "additionalProperties": false,
   "$defs": {
@@ -47,16 +48,35 @@
         }
       ]
     },
-    "runAction": {
+    "step": {
       "type": "object",
       "required": ["op", "input"],
       "properties": { "op": { "const": "plugin.prompt" }, "input": { "type": "string", "minLength": 1 } },
       "additionalProperties": false
     },
-    "assertion": {
+    "metric": {
       "type": "object",
-      "required": ["op", "value"],
-      "properties": { "op": { "enum": ["output.equals", "output.contains", "output.notContains"] }, "value": { "type": "string" } },
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "type": { "type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+        "expected": {},
+        "path": { "$ref": "#/$defs/relativePath" },
+        "description": { "type": "string" },
+        "weight": { "type": "number", "minimum": 0 },
+        "required": { "type": "boolean" },
+        "passScore": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "scoring": {
+      "type": "object",
+      "properties": {
+        "method": { "const": "weighted-average" },
+        "passScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "weights": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } },
+        "required": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "uniqueItems": true }
+      },
       "additionalProperties": false
     }
   }

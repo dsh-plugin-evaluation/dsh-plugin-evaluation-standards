@@ -7,6 +7,15 @@
   "required": true,
   "supportedBy": "final-output",
   "runnerSupport": "supported",
+  "defaultWeight": 1,
+  "defaultRequired": true,
+  "defaultPassScore": 0.8,
+  "rubric": {
+    "0": "没有回答问题或答案完全错误",
+    "0.5": "部分正确但有明显遗漏",
+    "0.8": "基本正确，仅缺少次要信息",
+    "1": "完整、正确地回答了问题"
+  },
   "description": "使用选定模型判断插件最终输出是否满足测试用例的预期结果。",
   "result": {
     "affectsPass": true,
